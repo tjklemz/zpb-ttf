@@ -49,12 +49,14 @@
 ;;; FIXME: move most/all of this stuff into initialize-instance
 ;;;
 
+(defparameter *supported-tables* (list "maxp" "head" "kern" "loca" "name" "cmap" "post" "hhea" "hmtx"))
+
 (defun open-font-loader-from-stream (input-stream)
   (let ((magic (read-uint32 input-stream)))
-    (when (/= magic #x00010000 #x74727565)
+    (when (/= magic #x00010000 #x74727565 #x4F54544F)
       (error 'bad-magic
              :location "font header"
-             :expected-values (list #x00010000 #x74727565)
+             :expected-values (list #x00010000 #x74727565 #x4F54544F)
              :actual-value magic))
     (let* ((table-count (read-uint16 input-stream))
            (font-loader (make-instance 'font-loader
@@ -75,15 +77,11 @@
                                     :offset offset
                                     :name (number->tag tag)
                                     :size size)))
-      (load-maxp-info font-loader)
-      (load-head-info font-loader)
-      (load-kern-info font-loader)
-      (load-loca-info font-loader)
-      (load-name-info font-loader)
-      (load-cmap-info font-loader)
-      (load-post-info font-loader)
-      (load-hhea-info font-loader)
-      (load-hmtx-info font-loader)
+
+      (loop for tag in *supported-tables*
+        do (when (table-exists-p tag font-loader)
+                 (funcall (tag->fun tag) font-loader)))
+
       (setf (glyph-cache font-loader)
             (make-array (glyph-count font-loader) :initial-element nil))
       font-loader)))

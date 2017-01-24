@@ -97,6 +97,9 @@ the CHAR-CODE of each character."
         for offset from 24 downto 0 by 8
         summing (ash (char-code char) offset)))
 
+(defun tag->fun (tag)
+    (symbol-function (intern (string-upcase (concatenate 'string "load-" tag "-info")) :zpb-ttf)))
+
 
 ;;; Getting table info out of the loader
 
